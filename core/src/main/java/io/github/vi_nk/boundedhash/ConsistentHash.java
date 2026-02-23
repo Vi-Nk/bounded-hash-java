@@ -3,6 +3,7 @@ package io.github.vi_nk.boundedhash;
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
@@ -123,6 +124,20 @@ public class ConsistentHash {
         return partitionOwner[partitionId];
     }
 
-    // public Map<String, Integer> getLoadDistribution() { }
+    public Map<String, Integer> getLoadDistribution() {
+        if (activeNodes.size() == 0)
+            return Collections.emptyMap();
+        Map<String, Integer> loadDistribution = new HashMap<>(activeNodes.size());
+
+        for (Node n : partitionOwner) {
+            if (n != null) {
+                int count = loadDistribution.getOrDefault(n.name(), 0);
+                loadDistribution.put(n.name(), count + 1);
+            }
+
+        }
+        return loadDistribution;
+
+    }
 
 }

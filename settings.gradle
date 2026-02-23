@@ -11,3 +11,4 @@ plugins {
 }
 
 rootProject.name = 'bounded-hash-java'
+include 'core', 'examples'

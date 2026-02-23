@@ -1,0 +1,15 @@
+plugins {
+    id 'application'
+}
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    implementation project(':core')
+}
+
+application {
+    mainClass = 'io.github.vi_nk.boundedhash.examples.ConsistentHashExample'
+}
