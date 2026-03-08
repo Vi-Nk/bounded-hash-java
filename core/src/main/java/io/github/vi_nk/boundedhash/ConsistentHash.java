@@ -9,6 +9,8 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeMap;
+import java.util.concurrent.locks.ReadWriteLock;
+import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 public class ConsistentHash {
 
@@ -16,6 +18,8 @@ public class ConsistentHash {
     private final Node[] partitionOwner;
     private Set<Node> activeNodes;
     private TreeMap<Long, Node> ring;
+
+    private final ReadWriteLock rwLock = new ReentrantReadWriteLock();
 
     public ConsistentHash(Config config) {
         this.config = config;
@@ -26,16 +30,22 @@ public class ConsistentHash {
     }
 
     public void add(Node node) {
-        if (!activeNodes.add(node)) {
-            return;
-        }
-        for (int i = 0; i < config.vNodes(); i++) {
-            String vNodeKey = node.name() + i;
-            long hashPosition = config.hasher().hash(vNodeKey.getBytes(StandardCharsets.UTF_8));
-            ring.put(hashPosition, node);
-        }
+        rwLock.writeLock().lock();
+        try {
+            if (!activeNodes.add(node)) {
+                return;
+            }
+            for (int i = 0; i < config.vNodes(); i++) {
+                String vNodeKey = node.name() + i;
+                long hashPosition = config.hasher().hash(vNodeKey.getBytes(StandardCharsets.UTF_8));
+                ring.put(hashPosition, node);
+            }
 
-        distributePartitions();
+            distributePartitions();
+
+        } finally {
+            rwLock.writeLock().unlock();
+        }
 
     }
 
@@ -87,23 +97,29 @@ public class ConsistentHash {
     }
 
     public void remove(Node node) {
-        if (node == null || !activeNodes.contains(node)) {
-            return;
+        rwLock.writeLock().lock();
+        try {
+            if (node == null || !activeNodes.contains(node)) {
+                return;
+            }
+
+            activeNodes.remove(node);
+
+            for (int i = 0; i < config.vNodes(); i++) {
+                String vNodeKey = node.name() + i;
+                long hashPosition = config.hasher().hash(vNodeKey.getBytes(StandardCharsets.UTF_8));
+                ring.remove(hashPosition);
+            }
+
+            if (activeNodes.isEmpty()) {
+                Arrays.fill(partitionOwner, null);
+            } else {
+                distributePartitions();
+            }
+        } finally {
+            rwLock.writeLock().unlock();
         }
 
-        activeNodes.remove(node);
-
-        for (int i = 0; i < config.vNodes(); i++) {
-            String vNodeKey = node.name() + i;
-            long hashPosition = config.hasher().hash(vNodeKey.getBytes(StandardCharsets.UTF_8));
-            ring.remove(hashPosition);
-        }
-
-        if (activeNodes.isEmpty()) {
-            Arrays.fill(partitionOwner, null);
-        } else {
-            distributePartitions();
-        }
     }
 
     public Node locate(String key) {
@@ -117,11 +133,17 @@ public class ConsistentHash {
         if (key == null || partitionOwner.length == 0) {
             return null;
         }
+        rwLock.readLock().lock();
+        try {
+            long keyHash = config.hasher().hash(key);
 
-        long keyHash = config.hasher().hash(key);
+            int partitionId = (int) (Long.remainderUnsigned(keyHash, config.partitionCount()));
+            return partitionOwner[partitionId];
 
-        int partitionId = (int) (Long.remainderUnsigned(keyHash, config.partitionCount()));
-        return partitionOwner[partitionId];
+        } finally {
+            rwLock.readLock().unlock();
+        }
+
     }
 
     public Map<String, Integer> getLoadDistribution() {

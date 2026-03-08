@@ -60,7 +60,6 @@ public class TestConsistentHash {
         int totalAssigned = 0;
         for (Map.Entry<String, Integer> entry : distribution.entrySet()) {
             int load = entry.getValue();
-            System.out.println("entry: " + entry.getKey() + " has load : " + load);
             assertTrue(load <= expectedMaxLoad,
                     "Node " + entry.getKey() + " exceeded max load! Load: " + load + ", Max: " + expectedMaxLoad);
             totalAssigned += load;
@@ -126,5 +125,70 @@ public class TestConsistentHash {
         router.remove(phantomNode);
 
         assertEquals(PARTITION_COUNT, router.getLoadDistribution().get("NodeA"));
+    }
+
+    @Test
+    void testConcurrentAddAndRemoveNodes() throws InterruptedException {
+        Node nodeA = new Node("NodeA");
+        Node nodeB = new Node("NodeB");
+        Node nodeC = new Node("NodeC");
+
+        Thread addThread = new Thread(() -> {
+            for (int i = 0; i < 100; i++) {
+                router.add(new Node("Node-" + i));
+            }
+        });
+
+        Thread removeThread = new Thread(() -> {
+            for (int i = 0; i < 100; i++) {
+                router.remove(new Node("Node-" + i));
+            }
+        });
+
+        addThread.start();
+        removeThread.start();
+
+        addThread.join();
+        removeThread.join();
+
+        router.add(nodeA);
+        router.add(nodeB);
+        router.add(nodeC);
+
+        Map<String, Integer> distribution = router.getLoadDistribution();
+        assertTrue(distribution.containsKey("NodeA"));
+        assertTrue(distribution.containsKey("NodeB"));
+        assertTrue(distribution.containsKey("NodeC"));
+    }
+
+    @Test
+    void testConcurrentLocate() throws InterruptedException {
+        Node nodeA = new Node("NodeA");
+        Node nodeB = new Node("NodeB");
+        Node nodeC = new Node("NodeC");
+
+        router.add(nodeA);
+        router.add(nodeB);
+        router.add(nodeC);
+
+        String testKey = "concurrent-key";
+
+        Thread locateThread1 = new Thread(() -> {
+            for (int i = 0; i < 1000; i++) {
+                assertNotNull(router.locate(testKey));
+            }
+        });
+
+        Thread locateThread2 = new Thread(() -> {
+            for (int i = 0; i < 1000; i++) {
+                assertNotNull(router.locate(testKey));
+            }
+        });
+
+        locateThread1.start();
+        locateThread2.start();
+
+        locateThread1.join();
+        locateThread2.join();
     }
 }

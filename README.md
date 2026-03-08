@@ -1,73 +1,79 @@
-# Bounded Hash Java Library
+# Bounded Hash Java
 
-## Overview
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://opensource.org/licenses/MIT)
 
-Consistent hashing with bounded loads is a load balancing technique that ensures uniform distribution of clients across servers while maintaining stability and minimizing client reassignment during system changes. By introducing a load factor (ε), it guarantees that no server exceeds (1+ε) times the average load, achieving both uniformity and consistency. For more details, refer to the [Google Research blog](https://research.google/blog/consistent-hashing-with-bounded-loads/).
+A zero-dependency, thread-safe Java implementation of Consistent Hashing with Bounded Loads. 
 
-The algorithm provides tight guarantees on the maximum load of each server while maintaining consistency and stability. It minimizes the number of client reassignments when changes occur in the system, such as the addition or removal of servers or clients. This makes it ideal for scenarios where both uniformity and consistency in load distribution are critical.
+Based on the algorithm formalized by Google Research and utilized by Vimeo engineering, this library provides uniform routing across distributed systems while strictly capping the maximum assignment load on any single node. It mitigates the hotspotting issues prevalent in traditional consistent hashing algorithms.
 
-This library implements the principles of consistent hashing with bounded loads, providing a robust solution for load balancing, caching, and distributed systems.
+## Features
+
+* **Bounded Loads**: Implements a configurable load factor to guarantee no server receives more than `(1 + ε)` times the average load.
+* **Thread-Safe**: Utilizes `ReentrantReadWriteLock` to support high-throughput concurrent reads alongside safe, blocking writes during topology changes.
+* **Zero Dependencies**: Lightweight architecture with no external library requirements.
+* **High-Performance Hashing**: Includes an optimized, allocation-free 64-bit `Murmur2Hasher` for uniform distribution. The library provides a default hasher but is extendable to any other hashing algorithm of the user's choice.
 
 ## Installation
 
-WIP
+### Maven
+
+
+### Gradle
+
 
 ## Usage
 
-### Example
-Below is an example of how to use the `ConsistentHash` class:
+You can find a complete example in the [`examples` folder](examples/src/main/java/io/github/vi_nk/boundedhash/ConsistentHashExample.java). Below is a concise implementation for configuring the router, defining nodes, and locating assigned destinations.
 
+### Example Code
 ```java
 import io.github.vi_nk.boundedhash.*;
-import java.util.Map;
 
 public class ConsistentHashExample {
     public static void main(String[] args) {
-        Config config = new Config(10, 3, 1.25, new FNV1a64());
-        ConsistentHash consistentHash = new ConsistentHash(config);
+        // Initialize configuration
+        ConsistentHash router = new ConsistentHash(new Config(4096, 256, 1.25, new Murmur2Hasher()));
 
-        Node node1 = new Node("Node1");
-        Node node2 = new Node("Node2");
-        Node node3 = new Node("Node3");
+        // Register nodes
+        router.add(new Node("Server-A"));
+        router.add(new Node("Server-B"));
+        router.add(new Node("Server-C"));
 
-        consistentHash.add(node1);
-        consistentHash.add(node2);
-        consistentHash.add(node3);
+        // Route keys to their designated nodes
+        System.out.println("Key 'session-1234' -> Node: " + router.locate("session-1234").name());
+        System.out.println("Key 'session-9999' -> Node: " + router.locate("session-9999").name());
 
-        String key = "myKey";
-        Node locatedNode = consistentHash.locate(key);
-        System.out.println("Key '" + key + "' is mapped to node: " + locatedNode.name());
-
-        Map<String, Integer> loadDistribution = consistentHash.getLoadDistribution();
-        System.out.println("Load distribution across nodes: " + loadDistribution);
+        // Retrieve and print partition distribution
+        System.out.println("Partition Distribution: " + router.getLoadDistribution());
     }
 }
+```
+
+### Running the Example
+
+```bash
+./gradlew :examples:run
 ```
 
 ## Development
 
 ### Prerequisites
-- Java 17 or higher
-- Gradle 8.5 or higher
+
+* Java 17 or higher
+* Gradle 8.5 or higher
 
 ### Building the Project
-To build the project, run the following command:
+
+Compile the source code and build the JAR:
 
 ```bash
 ./gradlew build
 ```
 
 ### Running Tests
-To execute the test suite, use the following command:
+
+Execute the JUnit test suite to verify bounded load constraints and thread-safety:
 
 ```bash
 ./gradlew test
-```
-
-### Running Examples
-To run the example provided in the `examples` module, use the following command:
-
-```bash
-cd examples
-./gradlew run
 ```
