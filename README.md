@@ -77,3 +77,20 @@ Execute the JUnit test suite to verify bounded load constraints and thread-safet
 ```bash
 ./gradlew test
 ```
+
+## Benchmark Results
+
+The following benchmark results demonstrate the performance of the `ConsistentHash` implementation. Benchmarks were run using JMH (Java Microbenchmark Harness) on a JDK 17 environment.
+
+### Configuration Used
+- **Partitions**: 4096
+- **Virtual Nodes (vNodes)**: 256
+- **Load Factor**: 1.25
+- **Hasher**: Murmur2Hasher
+
+### Results
+
+| Benchmark                                   | Mode | Cnt | Score       | Error      | Units   |
+|--------------------------------------------|------|-----|-------------|------------|---------|
+| `ConsistentHashBenchmark.benchmarkAddRemove` | avgt | 5   | 693,831.902 |  17,645.205 | ns/op   |
+| `ConsistentHashBenchmark.benchmarkLocate`    | avgt | 4   | 33.720      |  0.280     | ns/op   |
