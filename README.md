@@ -1,10 +1,13 @@
 # Bounded Hash Java
 
+[![CI Build](https://img.shields.io/github/actions/workflow/status/Vi-Nk/bounded-hash-java/publish.yml?label=CI%20Build)](https://github.com/Vi-Nk/bounded-hash-java/actions)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://opensource.org/licenses/MIT)
+[![javadoc.io](https://javadoc.io/badge2/io.github.vi-nk/boundedhash/javadoc.svg)](https://javadoc.io/doc/io.github.vi-nk/boundedhash)
+[![Maven Central Version](https://img.shields.io/maven-central/v/io.github.vi-nk/boundedhash)](https://central.sonatype.com/artifact/io.github.vi-nk/boundedhash)
 
 A zero-dependency, thread-safe Java implementation of Consistent Hashing with Bounded Loads. 
 
-Based on the algorithm formalized by Google Research and utilized by Vimeo engineering, this library provides uniform routing across distributed systems while strictly capping the maximum assignment load on any single node. It mitigates the hotspotting issues prevalent in traditional consistent hashing algorithms.
+Based on the algorithm formalized by [Google Research](https://research.google/blog/consistent-hashing-with-bounded-loads/) and utilized by [Vimeo engineering](https://medium.com/vimeo-engineering-blog/improving-load-balancing-with-a-new-consistent-hashing-algorithm-9f1bd75709ed), this library provides uniform routing across distributed systems while strictly capping the maximum assignment load on any single node. It mitigates the hotspotting issues prevalent in traditional consistent hashing algorithms.
 
 ## Features
 
@@ -16,10 +19,18 @@ Based on the algorithm formalized by Google Research and utilized by Vimeo engin
 ## Installation
 
 ### Maven
-
+```
+<dependency>
+    <groupId>io.github.vi-nk</groupId>
+    <artifactId>boundedhash</artifactId>
+    <version>LATEST</version>
+</dependency>
+```
 
 ### Gradle
-
+```
+implementation("io.github.vi-nk:boundedhash:1.+")
+```
 
 ## Usage
 
@@ -67,15 +78,7 @@ public class ConsistentHashExample {
 Compile the source code and build the JAR:
 
 ```bash
-./gradlew build
-```
-
-### Running Tests
-
-Execute the JUnit test suite to verify bounded load constraints and thread-safety:
-
-```bash
-./gradlew test
+./gradlew :core:build
 ```
 
 ## Benchmark Results
