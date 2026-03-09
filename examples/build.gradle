@@ -3,11 +3,12 @@ plugins {
 }
 
 repositories {
+    mavenLocal()
     mavenCentral()
 }
 
 dependencies {
-    implementation project(':core')
+    implementation 'io.github.vi-nk:boundedhash:1.+'
 }
 
 application {

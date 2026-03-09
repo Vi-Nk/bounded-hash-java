@@ -12,6 +12,18 @@ import java.util.TreeMap;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
+/**
+ * ConsistentHash implements a bounded consistent hashing ring with fixed
+ * partitions.
+ * <p>
+ * The class assigns partition ownership to nodes using a hash ring composed of
+ * virtual
+ * nodes. It supports adding and removing nodes and locating the owner for a
+ * given key.
+ * The implementation maintains a stable distribution of partitions and attempts
+ * to
+ * respect a configurable {@code loadFactor} when assigning partitions to nodes.
+ */
 public class ConsistentHash {
 
     private Config config;
@@ -21,6 +33,14 @@ public class ConsistentHash {
 
     private final ReadWriteLock rwLock = new ReentrantReadWriteLock();
 
+    /**
+     * Create a new {@code ConsistentHash} with the provided configuration.
+     *
+     * @param config the configuration describing partition count, virtual nodes,
+     *               hasher
+     *               and load factor. Must not be {@code null} (validated by
+     *               {@code Config}).
+     */
     public ConsistentHash(Config config) {
         this.config = config;
         partitionOwner = new Node[config.partitionCount()];
@@ -29,6 +49,15 @@ public class ConsistentHash {
 
     }
 
+    /**
+     * Add a node to the cluster and redistribute partition ownership accordingly.
+     * <p>
+     * If the node already exists this method is a no-op. The method registers
+     * {@code vNodes} virtual nodes for the provided node on the hash ring and then
+     * triggers partition distribution to respect the configured load factor.
+     *
+     * @param node the node to add; must be non-null and have valid properties.
+     */
     public void add(Node node) {
         rwLock.writeLock().lock();
         try {
@@ -96,6 +125,13 @@ public class ConsistentHash {
 
     }
 
+    /**
+     * Remove a node from the cluster and redistribute partitions previously owned
+     * by that node.
+     *
+     * @param node the node to remove; if {@code null} or not present this method is
+     *             a no-op.
+     */
     public void remove(Node node) {
         rwLock.writeLock().lock();
         try {
@@ -122,6 +158,14 @@ public class ConsistentHash {
 
     }
 
+    /**
+     * Locate the node responsible for the provided key (String form).
+     *
+     * @param key the key to locate; if {@code null} or empty, {@code null} is
+     *            returned.
+     * @return the {@link Node} responsible for the key or {@code null} if no nodes
+     *         exist.
+     */
     public Node locate(String key) {
         if (key == null || key.isEmpty()) {
             return null;
@@ -129,6 +173,15 @@ public class ConsistentHash {
         return locate(key.getBytes(StandardCharsets.UTF_8));
     }
 
+    /**
+     * Locate the node responsible for the provided key (byte[] form).
+     *
+     * @param key the key bytes to locate; may be {@code null} in which case
+     *            {@code null}
+     *            is returned.
+     * @return the {@link Node} responsible for the key or {@code null} if no nodes
+     *         exist.
+     */
     public Node locate(byte[] key) {
         if (key == null || partitionOwner.length == 0) {
             return null;
@@ -146,6 +199,14 @@ public class ConsistentHash {
 
     }
 
+    /**
+     * Return a mapping of node names to the number of partitions currently assigned
+     * to each node.
+     *
+     * @return an immutable map of node name &rarr; partition count, or an empty map
+     *         if
+     *         there are no active nodes.
+     */
     public Map<String, Integer> getLoadDistribution() {
         if (activeNodes.size() == 0)
             return Collections.emptyMap();

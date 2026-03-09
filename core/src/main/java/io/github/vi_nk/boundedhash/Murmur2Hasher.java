@@ -1,5 +1,12 @@
 package io.github.vi_nk.boundedhash;
 
+/**
+ * Murmur2Hasher provides an implementation of the {@link Hasher} interface
+ * using
+ * the MurmurHash2 algorithm (64-bit variant). This implementation is suitable
+ * for non-cryptographic hashing where speed and distribution quality are
+ * important.
+ */
 public class Murmur2Hasher implements Hasher {
     // https://github.com/aappleby/smhasher/blob/0ff96f7835817a27d0487325b6c16033e2992eb5/src/MurmurHash2.cpp#L96
     private static final long M = 0xc6a4a7935bd1e995L;
@@ -8,6 +15,13 @@ public class Murmur2Hasher implements Hasher {
     private final long seed = 0x1234ABCDL;
 
     @Override
+    /**
+     * Compute a 64-bit Murmur2 hash for the provided byte array.
+     *
+     * @param data the input bytes to hash; may be {@code null} or empty in which
+     *             case {@code 0L} is returned.
+     * @return the 64-bit hash value as a {@code long}.
+     */
     public long hash(byte[] data) {
         if (data == null || data.length == 0) {
             return 0L;

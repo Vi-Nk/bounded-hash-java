@@ -1,10 +1,29 @@
 plugins {
     id 'java-library'
+    id 'com.vanniktech.maven.publish' version '0.32.0'
 }
 
 repositories {
     mavenCentral()
 }
+
+def getVersion() {
+    def versionFile = file('version.txt')
+    if (!versionFile.exists()) {
+        versionFile.text = '1.0.0'
+    }
+    def baseVersion = versionFile.text.trim()
+    def runNumber = System.getenv("GITHUB_RUN_NUMBER")
+    
+    if (runNumber) {
+        return "${baseVersion}-${runNumber}"
+    }
+    return "${baseVersion}-0"
+}
+
+group = 'io.github.vi-nk'
+version = getVersion()
+project.ext.set("VERSION_NAME", version)
 
 dependencies {
     testImplementation libs.junit.jupiter
@@ -22,6 +41,15 @@ java {
     }
 }
 
+javadoc {
+    failOnError = false 
+}
+
 tasks.named('test') {
     useJUnitPlatform()
+}
+
+mavenPublishing {
+    publishToMavenCentral(com.vanniktech.maven.publish.SonatypeHost.CENTRAL_PORTAL)
+    signAllPublications()
 }
